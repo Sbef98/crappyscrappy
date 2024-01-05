@@ -1,0 +1,27 @@
+{
+    "appId": "",
+    "javascriptKey": "",
+    "restAPIKey": "",
+    "clientKey": "",
+    "masterKey": "",
+    "verifyUserEmails": false,
+    "liveQuery": {
+        "classNames": [
+        ]
+    },
+    "liveQueryServerOptions": {
+        "appId": "",
+        "masterKey": "",
+        "javascriptKey": "",
+        "clientKey": "",
+        "serverURL": "http://localhost:1337/parse"
+    },
+    "startLiveQueryServer": true,
+    "databaseURI": "",
+    "cloud": "./crappyscrappy/backend/main.js",
+    "cacheMaxSize": 10000,
+    "defaultLimit": 60000,
+    "objectIdSize": 15,
+    "verbose": false,
+    "publicServerURL": ""
+}   
