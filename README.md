@@ -37,3 +37,5 @@ Probably, one of the best things to do is that the ant finds the food (content),
 ## Virtual Environment duties
 <del> For example, the pheromons should "evaporate" as time passes. Therefore, there should be something like a scheduled job that "cleans" that takes care of evaporation, and there should also be some sort of automatic function (or more agents dedicated to that?) that updates path prizes whenever an ant acutally find good food or not once it reaches for the end of its path.</del>
 Questo non ha senso. Può essere sufficiente un timestamp che mi permetta, di volta in volta, di calcolare quale sia il valore da prendere in considerazione.
+
+***WATCHOUT***: I enalbed client class creation

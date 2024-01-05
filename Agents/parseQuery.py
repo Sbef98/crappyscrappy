@@ -4,6 +4,7 @@ class ParseQuery:
         self.filters = {}
         self.limit_value = None
         self.skip_value = None
+        self.aggregation_value = None
 
     def equalTo(self, key, value):
         self.filters[key] = value

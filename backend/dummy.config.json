@@ -23,5 +23,6 @@
     "defaultLimit": 60000,
     "objectIdSize": 15,
     "verbose": false,
-    "publicServerURL": ""
+    "publicServerURL": "",
+    "allowClientClassCreation": true
 }   
