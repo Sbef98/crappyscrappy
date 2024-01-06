@@ -10,16 +10,17 @@ A possibility could be a fully functional backend, and as usual i am thinking ab
 
 ## Agents duty
 Let's try to sum up what an agent should do more or less.
--> Open an assigned website
--> Get all it's content and try to understand what it is about and what info are useful
--> Get all it's link
--> contextualized the links (is it good?)
--> Split the links in categories
-    - Same domain
-    - Same subdomain
-    - Else
--> For each link, get if it is already visited and in case get it's stats
--> Choose the best link to follow multiplying various factors, in a random way
+
+ [] Open an assigned website
+ [] Get all it's content and try to understand what it is about and what info are useful
+ [] Get all it's link
+ [] contextualized the links (is it good?)
+ [] Split the links in categories
+     - Same domain
+     - Same subdomain
+     - Else
+ [] For each link, get if it is already visited and in case get it's stats
+ [] Choose the best link to follow multiplying various factors, in a random way
 
 ### Calc of probability
 The probability of choosing a link should have different weights, based on multiple facts:
