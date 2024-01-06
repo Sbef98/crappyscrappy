@@ -128,6 +128,7 @@ class LiveQueryClient:
         self.server_url = server_url
         self.websocket = None
         self.subscriptions = {}
+        self.observers = []
         self.connect()
 
     def connect(self):
@@ -156,18 +157,20 @@ class LiveQueryClient:
 
     def _handle_message(self, message):
         data = json.loads(message)
-        if data.get('op') == 'connected':
-            print("Connected to LiveQuery")
-        elif data.get('op') == 'error':
-            print(f"Error: {data}")
-        elif data.get('op') == 'subscribed':
-            print(f"Subscribed to query: {data}")
-        elif data.get('op') == 'unsubscribed':
-            print(f"Unsubscribed from query: {data}")
-        elif data.get('op') == 'create' or data.get('op') == 'update' or data.get('op') == 'delete':
-            print(f"Object {data.get('op')}d: {data.get('object')}")
+        # if data.get('op') == 'connected':
+        #     print("Connected to LiveQuery")
+        # elif data.get('op') == 'error':
+        #     print(f"Error: {data}")
+        # elif data.get('op') == 'subscribed':
+        #     print(f"Subscribed to query: {data}")
+        # elif data.get('op') == 'unsubscribed':
+        #     print(f"Unsubscribed from query: {data}")
+        # elif data.get('op') == 'create' or data.get('op') == 'update' or data.get('op') == 'delete':
+        #     print(f"Object {data.get('op')}d: {data.get('object')}")
+        for observer in self.observers:
+            observer(data.get('op'), data.get('object'))
 
-    def subscribe(self, class_name, query = None):
+    def subscribe(self, class_name, callback, query = None):
         if(query is not None):
             subscription_data = {
                 "op": "subscribe",
@@ -188,6 +191,7 @@ class LiveQueryClient:
                 }
             }
         self.websocket.send(json.dumps(subscription_data))
+        self.observers.append(callback)
 
     def unsubscribe(self, subscription_id):
         unsubscribe_data = {
@@ -196,7 +200,24 @@ class LiveQueryClient:
             "subscriptionId": subscription_id
         }
         self.websocket.send(json.dumps(unsubscribe_data))
+        self.observers = []
 
+    def addCallback(self, callback):
+        self.observers.append(callback)
+
+
+
+def test_handle_message(operation, data):
+        if operation == 'connected':
+            print("Connected to LiveQuery")
+        elif operation == 'error':
+            print(f"Error: {data}")
+        elif operation == 'subscribed':
+            print(f"Subscribed to query: {data}")
+        elif operation == 'unsubscribed':
+            print(f"Unsubscribed from query: {data}")
+        elif operation == 'create' or operation == 'update' or operation == 'delete':
+            print(f"Object {operation}d: {data}")
 
 if __name__ == "__main__":
     # let's read url, appId and masterKey from the environment variables saved in environment.json
@@ -209,4 +230,4 @@ if __name__ == "__main__":
     live_query_client = LiveQueryClient(environment['appId'], environment['clientKey'], environment['serverURL'])
 
     # Subscribe to the class Node
-    live_query_client.subscribe("Node")
+    live_query_client.subscribe("Node", test_handle_message)

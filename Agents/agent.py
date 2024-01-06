@@ -26,7 +26,7 @@ class AgentAnt(scrapy.Spider):
         all_links = response.css('a::attr(href)').getall()
         # filter out the relative paths
         links = [link for link in all_links if bool(urlparse(link).netloc)]
-        linksWithQuality = self.checkLinksQuality(links, content)
+        # linksWithQuality = self.checkLinksQuality(links, content)
         # let's get the depth
         depth = response.meta['depth']
         # let's get the parent url
@@ -34,21 +34,21 @@ class AgentAnt(scrapy.Spider):
         # let's get the current url
         url = response.url
         # let's get the current page language:
-        language = self.detectLanguage(content)
+        # language = self.detectLanguage(content)
         # let's create the node
         node = {
             "url": url,
             "parent_url": parent_url,
             "depth": depth,
-            "daughter_nodes": linksWithQuality,
-            "content": content,
-            "content_language": language,
+            "daughter_nodes": links,
+            # "content": content,
+            # "content_language": language,
             # the "first discovery date" and the last "update" will be given for granted
             # by the parse server, who will update the two numbers automatically.
         }
         # let's save the node
         self.env.saveNode(node)
-        if(depth < 2):
+        if(depth < 10):
             # explore any link
             link = random.choice(links)
             # let's create the request

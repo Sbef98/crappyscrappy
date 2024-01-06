@@ -121,18 +121,18 @@ Parse.Cloud.beforeSave("Node", async function (request, response) {
         node.set("url", url);
         return node;
     });
-    const savedNewNotes = await Parse.Object.saveAll(newNodes);
-    request.object.set("daughter_nodes", existingDaughterUrls.concat(savedNewNotes));
+    const savedNewNodes = await Parse.Object.saveAll(newNodes);
+    request.object.set("daughter_nodes", existingDaughterUrls.concat(savedNewNodes));
     return request.object;
 });
 
 // let's add a after FInd for the class Node, to map the daughter_urls to daughter_nodes
 Parse.Cloud.afterFind("Node", async function (request) {
     const nodes = request.objects;
-    nodes.forEach(node => {
-        const daughterNodes = node.get("daughter_nodes");
-        if(daughterNodes)
-            node.set("daughter_urls", daughterNodes.map(daughterNode => daughterNode.get("url")));
-    });
+    // nodes.forEach(node => {
+    //     const daughterNodes = node.get("daughter_nodes");
+    //     if(daughterNodes)
+    //         node.set("daughter_urls", daughterNodes.map(daughterNode => daughterNode.get("url")));
+    // });
     return nodes;
 });
