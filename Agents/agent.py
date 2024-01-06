@@ -48,7 +48,7 @@ class AgentAnt(scrapy.Spider):
         }
         # let's save the node
         self.env.saveNode(node)
-        if(depth < 5):
+        if(depth < 2):
             # explore any link
             link = random.choice(links)
             # let's create the request

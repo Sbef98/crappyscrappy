@@ -3,6 +3,9 @@ import requests
 import json
 # let's import the ParseQuery class
 from parseQuery import ParseQuery as Query
+import websocket
+import threading
+import time
 
 # let's now create a class called "ParseEnvironmentHandler" that will manage the connection to Parse Server
 class ParseServerClient:
@@ -117,7 +120,82 @@ class ParseServerClient:
         # dump the json into a list into a dictionary
         value = value['results']
         return value
-    
+
+class LiveQueryClient:
+    def __init__(self, app_id, clientKey, server_url):
+        self.app_id = app_id
+        self.clientKey = clientKey
+        self.server_url = server_url
+        self.websocket = None
+        self.subscriptions = {}
+        self.connect()
+
+    def connect(self):
+        self.websocket = websocket.create_connection(f"{self.server_url.replace('http', 'ws')}/parse")
+        self._authenticate()
+
+        # Start a thread to listen to the WebSocket messages
+        threading.Thread(target=self._receive_messages).start()
+
+    def _authenticate(self):
+        auth_data = {
+            "op": "connect",
+            "applicationId": self.app_id,
+            "clientKey": self.clientKey
+        }
+        self.websocket.send(json.dumps(auth_data))
+
+    def _receive_messages(self):
+        while True:
+            try:
+                message = self.websocket.recv()
+                self._handle_message(message)
+            except Exception as e:
+                print(f"WebSocket error: {str(e)}")
+                break
+
+    def _handle_message(self, message):
+        data = json.loads(message)
+        if data.get('op') == 'connected':
+            print("Connected to LiveQuery")
+        elif data.get('op') == 'error':
+            print(f"Error: {data}")
+        elif data.get('op') == 'subscribed':
+            print(f"Subscribed to query: {data}")
+        elif data.get('op') == 'unsubscribed':
+            print(f"Unsubscribed from query: {data}")
+        elif data.get('op') == 'create' or data.get('op') == 'update' or data.get('op') == 'delete':
+            print(f"Object {data.get('op')}d: {data.get('object')}")
+
+    def subscribe(self, class_name, query = None):
+        if(query is not None):
+            subscription_data = {
+                "op": "subscribe",
+                "requestId": 1,  # Change this requestId for multiple subscriptions
+                "query": {
+                    "className": class_name,
+                    "where": query
+                }
+            }
+            # query = {"classname": "Node"}
+        else:
+            subscription_data = {
+                "op": "subscribe",
+                "requestId": 1,  # Change this requestId for multiple subscriptions
+                "query": {
+                    "className": class_name,
+                    "where": {}
+                }
+            }
+        self.websocket.send(json.dumps(subscription_data))
+
+    def unsubscribe(self, subscription_id):
+        unsubscribe_data = {
+            "op": "unsubscribe",
+            "requestId": 1,  # Change this requestId for multiple subscriptions
+            "subscriptionId": subscription_id
+        }
+        self.websocket.send(json.dumps(unsubscribe_data))
 
 
 if __name__ == "__main__":
@@ -127,22 +205,8 @@ if __name__ == "__main__":
     # let's create the ParseServerClient object
     parseServerClient = ParseServerClient(environment['serverURL'], environment['appId'], environment['restApiKey'])
     
-    # let's create a new object
-    newObject = {
-        'name': 'John',
-        'age': 30
-    }
-    # let's create the object
-    response = parseServerClient.create('Person', newObject)
-    # and a second Person of age 22
-    newObject = {
-        'name': 'Mary',
-        'age': 22
-    }
-    # let's create the object
-    response = parseServerClient.create('Person', newObject)
-    # let's query the database downloading all the Person of age 22
-    query = Query('Person')
-    query.equalTo('age', 22)
-    response = parseServerClient.query(query)
-    print(response)
+    # let's create a live query client
+    live_query_client = LiveQueryClient(environment['appId'], environment['clientKey'], environment['serverURL'])
+
+    # Subscribe to the class Node
+    live_query_client.subscribe("Node")

@@ -1,3 +1,92 @@
+// let's define a model for the class Node
+const Node = Parse.Object.extend("Node", {
+    // instance properties
+    url: {
+        get: function () {
+            return this.get("url");
+        },
+        set: function (value) {
+            this.set("url", value);
+        }
+    },
+    daughter_nodes: {
+        get: function () {
+            return this.get("daughter_urls");
+        },
+        set: function (value) {
+            this.set("daughter_urls", value);
+        }
+    },
+    parent_url: {
+        get: function () {
+            return this.get("parent_url");
+        },
+        set: function (value) {
+            this.set("parent_url", value);
+        }
+    },
+    depth: {
+        get: function () {
+            return this.get("depth");
+        },
+        set: function (value) {
+            this.set("depth", value);
+        }
+    },
+    content: {
+        get: function () {
+            return this.get("content");
+        },
+        set: function (value) {
+            this.set("content", value);
+        }
+    },
+    content_language: {
+        get: function () {
+            return this.get("content_language");
+        },
+        set: function (value) {
+            this.set("content_language", value);
+        }
+    },
+    updatedAt: {
+        get: function () {
+            return this.get("updatedAt");
+        },
+        set: function (value) {
+            this.set("updatedAt", value);
+        }
+    },
+    createdAt: {
+        get: function () {
+            return this.get("createdAt");
+        },
+        set: function (value) {
+            this.set("createdAt", value);
+        }
+    },
+    lastTraversedAt: {
+        get: function () {
+            return this.get("lastTraversedAt");
+        },
+        set: function (value) {
+            this.set("lastTraversedAt", value);
+        }
+    },
+
+    // Instance methods
+    initialize: function (attrs, options) {
+        this.url = attrs.url;
+        this.daughter_urls = attrs.daughter_urls;
+    }
+}, {
+    // Class methods
+    new: function (attrs, options) {
+        return new Node(attrs, options);
+    }
+});
+
+
 // let's add a before save for the clas Node
 Parse.Cloud.beforeSave("Node", async function (request, response) {
     // let's check if a node with same url already exists

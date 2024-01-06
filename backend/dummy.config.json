@@ -7,6 +7,7 @@
     "verifyUserEmails": false,
     "liveQuery": {
         "classNames": [
+            "Node"
         ]
     },
     "liveQueryServerOptions": {

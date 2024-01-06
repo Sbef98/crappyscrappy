@@ -12,7 +12,7 @@ A possibility could be a fully functional backend, and as usual i am thinking ab
 [] updatedAt field it's automatically incremented everytime we update a node, but the time update may be triggered by the parent updating the informations about its child (e.g. its quality statement). What we should rather do, is a "surf date", and therefore we should update it only when we surf it.
 [] When an agent wants to sniff the quality of a direction (e.g. querying one of the webistes to check if it should follow that path), the environment should already reply with a "summarized" object, therefore if multiple parents made a quality statement for a certain node, we should return the object with one single parent quality statement with the weighted mean sqaure root.
 [] check bi-directional links between kids and parents
-
+[] when a parent is updated, apart updating its children we must also remove the info from such node on the children nodes that are not children anymore
 
 ## Agents duty
 Let's try to sum up what an agent should do more or less.
