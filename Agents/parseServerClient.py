@@ -15,9 +15,6 @@ class ParseServerClient:
     # let's now create the methods that allow for basic CRUD operartions on parse server
     # let's start with the create method
     def create(self, object_class, object):
-        # turn object into json
-        object = json.dumps(object.to_dict())
-        print(object)
         # let's create the url
         url = self.parse_server_url + '/classes/' + object_class
         # let's create the headers
@@ -48,7 +45,6 @@ class ParseServerClient:
     
     # let's now create the update method
     def update(self, object_class, object_id, object):
-        object = json.dumps(object.to_dict())
         # let's create the url
         url = self.parse_server_url + '/classes/' + object_class + '/' + object_id
         # let's create the headers

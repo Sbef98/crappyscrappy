@@ -7,20 +7,34 @@ The "true" environment is simply the web, where the nodes are the classical webs
 
 A possibility could be a fully functional backend, and as usual i am thinking about you parse server, something that can easily scale up and allow for complex tasks without having to waste time. This could be great as long as we are just experimenting, becuase speed is not a problem, but may be a bulky bottleneck when comes to actual data mining. In fact, if we had thousands of agents all working at the same time, we may want something more lightweight, while using parse or other backends and database engines for acutal persistence/data analysis.
 
+### Envinronemnt duty:
+[] Make the identification ofthe single web page indipendent by the database object id. Therefore, use url as its primary key (not really possibile within parse server, needs a before save and after find)
+[] updatedAt field it's automatically incremented everytime we update a node, but the time update may be triggered by the parent updating the informations about its child (e.g. its quality statement). What we should rather do, is a "surf date", and therefore we should update it only when we surf it.
+[] When an agent wants to sniff the quality of a direction (e.g. querying one of the webistes to check if it should follow that path), the environment should already reply with a "summarized" object, therefore if multiple parents made a quality statement for a certain node, we should return the object with one single parent quality statement with the weighted mean sqaure root.
+[] check bi-directional links between kids and parents
+
 
 ## Agents duty
 Let's try to sum up what an agent should do more or less.
 
- [] Open an assigned website
- [] Get all it's content and try to understand what it is about and what info are useful
- [] Get all it's link
- [] contextualized the links (is it good?)
- [] Split the links in categories
+ [x] Open an assigned website
+ [x] Get all it's content and try to understand what it is about and what info are useful
+ [x] Get all it's link
+ [x] contextualized the links (is it good based on the current page description of the link?)
+ [x] Check current page language
+ [ ] Split the links in categories
      - Same domain
      - Same subdomain
      - Else
- [] For each link, get if it is already visited and in case get it's stats
- [] Choose the best link to follow multiplying various factors, in a random way
+[] Understand if one parent is double linked with his kid
+ [ ] For each link, get if it is already visited and in case get it's stats
+ [ ] When choosing a direction, it should first of all filter at least a bit to do not query all of them to the environment
+ [ ] Choose the best link to follow multiplying various factors, in a random way -> ofc take into account the quality of the link, also by how its parents stated it.
+ [] understand when going home (also through live query)
+
+#### Extra
+[] What if the same link is stated more than once? we need to contextualize it with some sort of mean!
+[] Multiple parents, how do we handle? E.g. multiple parents state different things on the same link, the parentQualityStatements should be computed also on the quality of the parent itself, therefore should be a mean square route evalutation based weighted by the parent's quality itself
 
 ### Calc of probability
 The probability of choosing a link should have different weights, based on multiple facts:
@@ -40,3 +54,6 @@ Probably, one of the best things to do is that the ant finds the food (content),
 Questo non ha senso. Può essere sufficiente un timestamp che mi permetta, di volta in volta, di calcolare quale sia il valore da prendere in considerazione.
 
 ***WATCHOUT***: I enalbed client class creation
+
+# How to solve the problem of actively retrieving the updates about the path quality
+Whenever an agent starts tracing a path, the overall path quality can be easily updated b the environment who should track what are the "sites" visited by the current agent (therefore each agent should have an id, or a single path should have an id). The overall quality of the agent's path can be updated to the agent itself (e.g. to understand if the quantity/quality of the informations retrieved till that moment is good enough), and the agent can be easily updated in real time via livequery reading the elements/events regarding is own path!
