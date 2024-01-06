@@ -21,11 +21,27 @@ class AgentAnt(scrapy.Spider):
 
     def parse(self, response):
         # let's read the whole content of the page
-        content = response.css('body').get()
+        try:
+            content = response.css('body').get()
+        except:
+            # go back to parent
+            # get the parent from the environment
+            parent_url = response.meta['parent_url']
+            # get the parent node
+            parent_node = self.env.getExistingNode(parent_url)
+            yield scrapy.Request(parent_url, callback=self.parse, meta={'depth': parent_node['depth'], 'parent_url': parent_node['parent_url']})
         # let's find all the urls
         all_links = response.css('a::attr(href)').getall()
         # filter out the relative paths
-        links = [link for link in all_links if bool(urlparse(link).netloc)]
+        try:
+            links = [link for link in all_links if bool(urlparse(link).netloc)]
+        except ValueError:
+            # go back to parent
+            # get the parent from the environment
+            parent_url = response.meta['parent_url']
+            # get the parent node
+            parent_node = self.env.getExistingNode(parent_url)
+            yield scrapy.Request(parent_url, callback=self.parse, meta={'depth': parent_node['depth'], 'parent_url': parent_node['parent_url']})
         # linksWithQuality = self.checkLinksQuality(links, content)
         # let's get the depth
         depth = response.meta['depth']
@@ -48,9 +64,23 @@ class AgentAnt(scrapy.Spider):
         }
         # let's save the node
         self.env.saveNode(node)
-        if(depth < 10):
-            # explore any link
-            link = random.choice(links)
+        # # if(depth < 10):
+        # if(len(links) == 0):
+        #     # go back to parent
+        #     # get the parent from the environment
+        #     parent_url = response.meta['parent_url']
+        #     # get the parent node
+        #     parent_node = self.env.getExistingNode(parent_url)
+        #     yield scrapy.Request(parent_url, callback=self.parse, meta={'depth': parent_node['depth'], 'parent_url': parent_node['parent_url']})
+        # # explore any link
+        # link = random.choice(links)
+        # # let's create the request
+        # request = scrapy.Request(link, callback=self.parse, meta={'depth': depth + 1, 'parent_url': url})
+        # # let's yield the request
+        # yield request
+        
+        #go on scraping all the links
+        for link in links:
             # let's create the request
             request = scrapy.Request(link, callback=self.parse, meta={'depth': depth + 1, 'parent_url': url})
             # let's yield the request

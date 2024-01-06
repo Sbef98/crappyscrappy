@@ -14,25 +14,24 @@ import threading,random
 
 app = dash.Dash(__name__)
 
-# Sample data (replace this with your actual data)
-# Initially empty, will be updated later
-nodes = []
-
 app.layout = html.Div([
+    dcc.Store(id='nodes', storage_type='session'),  # Store nodes data
     dcc.Graph(id='live-update-graph'),
     dcc.Interval(
         id='interval-component',
-        interval=5000,  # Update every 2 seconds
+        interval=30000,  # Update every 5 seconds
         n_intervals=0
     )
 ])
 
 @app.callback(
     Output('live-update-graph', 'figure'),
-    Input('interval-component', 'n_intervals')
+    Input('interval-component', 'n_intervals')  # Update graph when interval changes
 )
 def update_graph(n):
+    # Fetch nodes data here
     global nodes
+    print(len(nodes))
     # Create nodes and edges based on updated data
     # Inside the callback function for updating the graph
     node_trace = go.Scatter(
@@ -67,7 +66,6 @@ def update_graph(n):
     return fig
 
 def liveQueryUpdateCallback(operation, data):
-    global nodes
     if operation == 'connected':
             print("Connected to LiveQuery")
     elif operation == 'error':
@@ -75,6 +73,7 @@ def liveQueryUpdateCallback(operation, data):
     elif operation == 'subscribed':
         print(f"Subscribed to query: {data}")
     elif operation == 'create':
+        print("new node created!")
         nodes.append(data)
     elif operation == 'update':
         for i in range(len(nodes)):
@@ -82,6 +81,7 @@ def liveQueryUpdateCallback(operation, data):
                 nodes[i] = data
                 break
     elif operation == 'delete':
+        print("Node deleted!")
         for i in range(len(nodes)):
             if nodes[i]['url'] == data['url']:
                 del nodes[i]
@@ -98,4 +98,5 @@ if __name__ == '__main__':
     live_query_client = LiveQueryClient(environment['appId'], environment['clientKey'], environment['serverURL'])
     # # start live_query_client.subscribe("Node", liveQueryUpdateCallback) on different thread
     thread = threading.Thread(target=live_query_client.subscribe, args=("Node", liveQueryUpdateCallback))
+    thread.start()  # Start the thread
     app.run_server(debug=True)
