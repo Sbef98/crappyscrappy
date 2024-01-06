@@ -1,76 +1,101 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-# let's import from the agents folder the eparse server client class
-import sys
-sys.path.insert(0, '../Agents')
-
-from parseServerClient import ParseServerClient
+import dash
+from dash import html, dcc
+from dash.dependencies import Output, Input
+import plotly.graph_objects as go
 import json
-from flask import Flask, send_file
-import networkx as nx
-import io
+import sys
+# let's add Agents folder to the path
+sys.path.append("../Agents")
+# let's import the Parse Server Client
+from parseServerClient import ParseServerClient
+# and the live query client
+from parseServerClient import LiveQueryClient
+import threading,random
 
-app = Flask(__name__)
+app = dash.Dash(__name__)
 
-@app.route("/")
-def home():
-    return """
-    <html>
-        <body>
-            <img id="plot" src="/plot" alt="Plot">
-            <script>
-                setInterval(function(){
-                    document.getElementById('plot').src = "/plot?" + new Date().getTime();
-                }, 5000);
-            </script>
-        </body>
-    </html>
-    """
-@app.route("/plot")
-def plot():
-    # Create a directed graph
-    G = nx.DiGraph()
+# Sample data (replace this with your actual data)
+# Initially empty, will be updated later
+nodes = []
 
-    with open("environment.json", "r") as config:
-            # load it as a json object
-        config = json.load(config)
+app.layout = html.Div([
+    dcc.Graph(id='live-update-graph'),
+    dcc.Interval(
+        id='interval-component',
+        interval=5000,  # Update every 2 seconds
+        n_intervals=0
+    )
+])
 
-    # let's create the parse server client
-    client = ParseServerClient(config["serverURL"], config["appId"], config["restApiKey"])
-    # let's get all the nodes
-    nodes = client.queryAll("Node")
+@app.callback(
+    Output('live-update-graph', 'figure'),
+    Input('interval-component', 'n_intervals')
+)
+def update_graph(n):
+    global nodes
+    # Create nodes and edges based on updated data
+    # Inside the callback function for updating the graph
+    node_trace = go.Scatter(
+        x=[node['depth'] for node in nodes],
+        y=[len(node['daughter_nodes']) for node in nodes],
+        hovertext=[f"URL: {node['url']}<br>Parent URL: {node['parent_url']}<br>Depth: {node['depth']}" for node in nodes],
+        mode="markers",
+        hoverinfo="text",
+        marker=dict(color='blue', size=6),  # Decrease marker size
+    )
 
+    edge_trace = go.Scatter(
+        x=[node['depth'] for node in nodes],
+        y=[len(node['daughter_nodes']) for node in nodes],
+        line=dict(width=1, color='#888'),
+        hoverinfo='none',
+        mode='lines'
+    )
 
-    # Add nodes and edges to the graph
-    # For example, if 'parent_url' is the parent of 'url', you can add an edge from 'parent_url' to 'url'
-    for node in nodes:
-        # if the node has a parent
-        if node["parent_url"] is not None:
-            # add the edge
-            G.add_edge(node["parent_url"], node["url"])
-        else:
-            # add the node
-            G.add_node(node["url"])
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(
+                        title='Real-time Graph of Nodes',
+                        titlefont_size=16,
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20, l=5, r=5, t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=True),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=True)
+                    )
+                )
 
-    # Draw the graph
-    plt.figure(figsize=(8, 6))
-    nx.draw(G, with_labels=True)
+    return fig
 
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
+def liveQueryUpdateCallback(operation, data):
+    global nodes
+    if operation == 'connected':
+            print("Connected to LiveQuery")
+    elif operation == 'error':
+        print(f"Error: {data}")
+    elif operation == 'subscribed':
+        print(f"Subscribed to query: {data}")
+    elif operation == 'create':
+        nodes.append(data)
+    elif operation == 'update':
+        for i in range(len(nodes)):
+            if nodes[i]['url'] == data['url']:
+                nodes[i] = data
+                break
+    elif operation == 'delete':
+        for i in range(len(nodes)):
+            if nodes[i]['url'] == data['url']:
+                del nodes[i]
+                break
 
-    return send_file(img, mimetype='image/png')
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
-
-# # Create a directed graph
-# G = nx.DiGraph()
-
-
-
-# # Draw the graph
-# nx.draw(G, with_labels=True)
-# plt.show()
+if __name__ == '__main__':
+    with open('../Agents/environment.json', 'r') as f:
+        environment = json.load(f)
+    # let's create the ParseServerClient object
+    parseServerClient = ParseServerClient(environment['serverURL'], environment['appId'], environment['restApiKey'])
+    nodes = parseServerClient.queryAll("Node")
+    # print(nodes)
+    # let's crtate the live query client
+    live_query_client = LiveQueryClient(environment['appId'], environment['clientKey'], environment['serverURL'])
+    # # start live_query_client.subscribe("Node", liveQueryUpdateCallback) on different thread
+    thread = threading.Thread(target=live_query_client.subscribe, args=("Node", liveQueryUpdateCallback))
+    app.run_server(debug=True)
