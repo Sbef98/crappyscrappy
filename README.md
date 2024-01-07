@@ -82,32 +82,37 @@ Whenever an agent starts tracing a path, the overall path quality can be easily 
 ## Informations from within one node to other nodes
 To each link in the currently evaluated page should be related to a weight, which is the probability to pick it. What we must consider, to explore the most, is:
 
-[] Am i on the same (sub)domain? If so, i should give a boost to such website only if i am currently having a very high quality perspective about it. Anyway, for now, the chances order should be something like that:
+[x] Am i on the same (sub)domain? If so, i should give a boost to such website only if i am currently having a very high quality perspective about it. Anyway, for now, the chances order should be something like that:
     - 3 times higher probability to pick a different domain: it means new fresh info
     - 2 times to pick a different subdomain: it means same domain but maybe differnt informarions
     - 1 time to pick sam subdomain. Maybe a new page could give as more sauce.
 
 So, i assign 1,2,3 as starting weights for each one of the links.
 
-[] How well is my current website all these new explorable nodes? Let's have a sentiment analysis of the words before such link. The sentiment analysis should return a value between -1 and 1, which gives us a "very bad" to "very positive" ratio. 
+[x] The currentnode age could be an extra penalizer for internal nodes, but this time it should be a value between 0.5 and 1.5, so that if very well updated websites should be taken into consideration more in depth
+
+[x] How well is my current website all these new explorable nodes? Let's have a sentiment analysis of the words before such link. The sentiment analysis should return a value between -1 and 1, which gives us a "very bad" to "very positive" ratio. 
 At this point, we get these evaluations multiplied by the externality weighs. An external domain should get then the following impact:
     - Very positive external url => sentiment returns 1 => 1*3 = 3
     - Neutral external site: 0*3 = 0
     - Very negative external site: -1 * 3 = -3, should not be picked at all!
 
-[] Turn the -3 to 3 score into 0 to 6. So we stay positive ;)
+[x] Turn the -3 to 3 score into 0 to 6. So we stay positive ;)
 
-[] We should also check how old is the website. We should then get when this page was updated the last time. If it was a long time ago, the website should get a lower score. It really depends on what we consider "old". For example, if we want very fresh news, we need to penaliza a lot websites older than one week, by something like 50%  of tis total score if it hits the limit, on the other hand leaving 100% if it is from now.
+[x] We should also check how old is the website. We should then get when this page was updated the last time. If it was a long time ago, the website should get a lower score. It really depends on what we consider "old". For example, if we want very fresh news, we need to penaliza a lot websites older than one week, by something like 50%  of tis total score if it hits the limit, on the other hand leaving 100% if it is from now. **THIS WORKS ONLY IF YOU ARE ALREADY INSIDE AND SCRAPING BODOH**, unless we get a sneak peak through a head request tbh. Shall skip for now, it is toooooo slow....
 
-[] Let's normalize the current weights! So we have a value between 0 and 1, which is our probability weights.
+[x] Let's normalize the current weights! So we have a value between 0 and 1, which is our probability weights.
 
 
 ## Informations that can be computed accessing the environment
 But we can get more info if some nodes where already discovered. For example, if a node was already explored, we can get to know some info:
-- How many "in" edges it has (len(traversals))
+- How many "in" edges it has (len(traversals) but from different parents)
 - The value of each edge, which can tell us a lot of stuff, for example:
     - parentQualityStatement -> how much confidence the agent who traced such edge had at the moment of getting to this node
     - parent_node -> It could be interesting knowing how much authority it had the site pointing to this one. It's a complicated metric! Further we go more complex it could get such computation. **Maybe we should compute the "in" authority every time we go down!** For examnple,  adding to parentQualityStatement the parentAuthorityValue which should be the final overall probability that that node had to be picked by the agent who picked it.
     - agent -> the agent who traced such edge. An agent should be coming with a "overall evaluation" of what it was able to mine. Also the overall trip value should be considered respectively to how much deep the agent had to go. It may have gathered a lot of informations, but if it had to go through 150 nodes is less valuable than one who went through just 10.
     - traversal_depth -> how deep was this node on the overall trip? Idk if this is of any usefulness 
     - createdAt -> The time of the edge creation. How much time ago was this visit? If it is a lot, it's not so good anymore
+- The age of the node last time you scraped it...
+
+**traversals should be deleted after a while coz meaningless**
