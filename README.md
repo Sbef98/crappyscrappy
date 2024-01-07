@@ -41,7 +41,8 @@ Let's try to sum up what an agent should do more or less.
         "parent_node": parent_node,
         "traversal_depth": depth,
         "parentQualityStatement": parentQualityStatement,
-        "traversalDateTime": datetime.datetime.now(),
+        "updatedAt": datetime.datetime.now(),
+        "parent_node_quality": value
     }
         
     node = {
@@ -114,5 +115,12 @@ But we can get more info if some nodes where already discovered. For example, if
     - traversal_depth -> how deep was this node on the overall trip? Idk if this is of any usefulness 
     - createdAt -> The time of the edge creation. How much time ago was this visit? If it is a lot, it's not so good anymore
 - The age of the node last time you scraped it...
+- The overall evaluation of the content quality performed by the environment itself?
 
+### Let's explain this better
+[] Compute for each edge a value based on the stats
+[] Multiply that edge value by as eight given by the age of the edge
+[] Sum the overall value of the edges
+[] The total amount of traversal will not given by the exact count but by the intensity of the pheromone on that node rapresented by the previous count
+[] The node itself should rather have a value coz yes computed by the environment.
 **traversals should be deleted after a while coz meaningless**

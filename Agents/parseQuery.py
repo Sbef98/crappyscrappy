@@ -28,6 +28,9 @@ class ParseQuery:
     def aggregate(self, value):
         self.aggregation_value = value
     
+    def include(self, value):
+        self.filters["include"] = value
+    
 
     def find(self):
         # Here you would typically make a request to the Parse server with the filters

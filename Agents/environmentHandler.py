@@ -62,7 +62,32 @@ class VirtualEnvironment:
         liveQueryClient = LiveQueryClient(self.config["appId"], self.config["clientKey"], self.config["serverURL"])
         liveQueryClient.subscribe("Agent", callBack, {"objectId": agent["objectId"]})
         return liveQueryClient
+    
+    def getExistingNodeWithEdges(self, url):
+        # get the node existence
+        query = ParseQuery("Node")
+        query.equalTo("url", url)
+        #include the edges
+        query.include("traversals")
+        # get the result
+        result = self.client.query(query)
+        # if there is no result, return None
+        if len(result) == 0:
+            return None
+        # otherwise, return the first result
+        return result[0]
 
+    def fetchAgent(self, agent):
+        # get the agent
+        query = ParseQuery("Agent")
+        query.equalTo("objectId", agent["objectId"])
+        # get the result
+        result = self.client.query(query)
+        # if there is no result, return None
+        if len(result) == 0:
+            return None
+        # otherwise, return the first result
+        return result[0]
 
 if __name__ == "__main__":
     # let's create a new environment
