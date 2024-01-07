@@ -244,8 +244,25 @@ class AgentAnt(scrapy.Spider):
                 weight = 0.5
             link['ageWeight'] = weight
         return links
-            
-
+        
+    def getNodeWeightFromEnvironment(self, url):
+        node = self.env.getExistingNodeWithEdges(url)
+        edges = node['traversals']
+        
+        # let's index the edges by parent
+        edgesByParent = {}
+        for edge in edges:
+            if edge['parent_node'] in edgesByParent:
+                # lets keep the newest edge based on createdAt attribute
+                # this is important because ofc we keep the freshest informations from that specific parent
+                if(edge['createdAt'] > edgesByParent[edge['parent_node']]['createdAt']):
+                    edgesByParent[edge['parent_node']] = edge
+            else :
+                # let's index the edge by parent
+                edgesByParent[edge['parent_node']] = edge
+        
+        numberOfInEdges = len(edgesByParent)
+        
 
 if __name__ == "__main__":
     agent = AgentAnt()
