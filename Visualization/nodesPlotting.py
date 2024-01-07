@@ -37,7 +37,7 @@ def update_graph(n):
     node_trace = go.Scatter(
         x=[node['depth'] for node in nodes],
         y=[node['children_nodes'] for node in nodes],
-        hovertext=[f"URL: {node['url']}<br>Parent URL: {node['parent_url']}<br>Depth: {node['depth']}" for node in nodes],
+        hovertext=[f"URL: {node['url']}<br>Parent URL: {node['parent_node']}<br>Depth: {node['depth']}" for node in nodes],
         mode="markers",
         hoverinfo="text",
         marker=dict(color='blue', size=6),  # Decrease marker size

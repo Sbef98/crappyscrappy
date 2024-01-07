@@ -1,20 +1,20 @@
 import scrapy
-import random
 from urllib.parse import urlparse
 from environmentHandler import VirtualEnvironment
 from textblob import TextBlob
+import re
 
 
 class AgentAnt(scrapy.Spider):
     name = 'grogubila'
-    start_urls = ['https://google.com']
+    start_urls = ['https://www.unimore.it/', "https://www.comune.modena.it/", "https://www.ferrari.com/it-IT"]
 
     def __init__(self):
         # call the parent constructor
         super().__init__()
         # initialize the environment
         self.env = VirtualEnvironment()
-        self.agentInfo = self.env.initializeAgent(self.liveQueryUpdateCallback)
+        self.agentInfo, self.liveQueryClient = self.env.initializeAgent(self.liveQueryUpdateCallback)
     
     def liveQueryUpdateCallback(self, operation, data):
         if operation == 'connected':
@@ -27,12 +27,6 @@ class AgentAnt(scrapy.Spider):
             self.agentInfo = data
         elif operation == 'update':
             self.agentInfo = data
-            print(" ==================================================================================")
-            print(" ==================================================================================")
-            print(" ==================================================================================")
-            print(" ==================================================================================")
-            print(" ==================================================================================")
-            print(" ==================================================================================")
         elif operation == 'delete':
             # this agent shall die
             self.agentInfo = None
@@ -40,12 +34,12 @@ class AgentAnt(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            yield scrapy.Request(url, callback=self.parse, meta={'depth': 1, 'parent_url': None})
+            yield scrapy.Request(url, callback=self.parse, meta={'depth': 1, 'parent_node': None})
             
-    def goBackToParent(self, parent_url):
+    def goBackToParent(self, parent_node):
         # get the parent from the environment
-        parent_node = self.env.getExistingNode(parent_url)
-        yield scrapy.Request(parent_url, callback=self.parse, meta={'depth': parent_node['depth'], 'parent_url': parent_node['parent_url']})
+        parent_node = self.env.getExistingNode(parent_node)
+        yield scrapy.Request(parent_node, callback=self.parse, meta={'depth': parent_node['depth'], 'parent_node': parent_node['parent_node']})
 
     def parse(self, response):
         # let's read the whole content of the page
@@ -54,21 +48,22 @@ class AgentAnt(scrapy.Spider):
         except:
             # go back to parent
             # get the parent from the environment
-            parent_url = response.meta['parent_url']
+            parent_node = response.meta['parent_node']
             #go back to parent
-            self.goBackToParent(parent_url)
+            self.goBackToParent(parent_node)
             
         # let's find all the urls
         all_links = response.css('a::attr(href)').getall()
         # filter out the relative paths
         try:
-            links = [link for link in all_links if bool(urlparse(link).netloc)]
+            # links = [link for link in all_links if bool(urlparse(link).netloc) and not self.should_skip_url(link)]
+            links = [link for link in all_links if not link.startswith('/') and not self.should_skip_url(link)]
         except ValueError:
             # go back to parent
             # get the parent from the environment
-            parent_url = response.meta['parent_url']
+            parent_node = response.meta['parent_node']
             #go back to parent
-            self.goBackToParent(parent_url)
+            self.goBackToParent(parent_node)
             
         linksWithQuality = self.checkLinksQuality(links, content)
         
@@ -88,30 +83,70 @@ class AgentAnt(scrapy.Spider):
         # let's get the depth
         depth = response.meta['depth']
         # let's get the parent url
-        parent_url = response.meta['parent_url']
+        parent_node = response.meta['parent_node']
+        try:
+            parentQualityStatement = response.meta['parentQualityStatement']
+        except KeyError:
+            parentQualityStatement = None
         # let's get the current url
         url = response.url
         # let's get the current page language:
         # language = self.detectLanguage(content)
-        # let's create the node
+        
+        edge = {
+            "agent": self.agentInfo,
+            "parent_node": parent_node,
+            "traversal_depth": depth,
+            "parentQualityStatement": parentQualityStatement
+        }
         
         node = {
             "url": url,
-            "parent_url": parent_url,
-            "depth": depth,
             "children_nodes": len(linksWithQuality),
-            "agent": self.agentInfo,
+            "traversals": [edge],                  # arrays becuase more than one agent may land on the same node
         }
         
         # let's save the node
         self.env.saveNode(node)
         
-        #go on scraping all the links
-        for link in links:
-            # let's create the request
-            request = scrapy.Request(link, callback=self.parse, meta={'depth': depth + 1, 'parent_url': url})
-            # let's yield the request
-            yield request
+        if(depth == 1):
+            #go on scraping all the links
+            for link in linksWithQuality:
+                # let's create the request
+                request = scrapy.Request(link['url'], callback=self.parse, meta={'depth': depth + 1, 'parent_node': url, 'parentQualityStatement': link['parentQualityStatement']})
+                # let's yield the request
+                yield request
+        
+        self.liveQueryClient.unsubscribe(1)
+
+    def should_skip_url(self, url):
+        #basic filtering
+        skip_patterns = [
+            r'accounts\.google\.com',   # Google sign-in URLs
+            r'/login',                  # URLs containing '/login'
+            r'/signin',                 # URLs containing '/signin'
+            r'signin',                 # URLs containing 'signin'
+            r'/account',                # URLs containing '/account'
+            r'/auth',                   # URLs containing '/auth' for authentication
+            r'\.pdf$',                  # URLs ending with '.pdf'
+            r'\.jpg$',                  # URLs ending with '.jpg'
+            r'\.png$',                  # URLs ending with '.png'
+            r'\.zip$',                  # URLs ending with '.zip'
+            r'\?page=',                 # URLs with pagination parameters
+            r'\?sort=',                 # URLs with sorting parameters
+            r'\?filter=',               # URLs with filtering parameters
+            r'\?sessionid=',            # URLs with session IDs
+            r'\?utm_source=',           # URLs with tracking parameters
+            r'\?tracking_id=',
+        ]
+        
+        # Check if the URL matches any skip patterns
+        for pattern in skip_patterns:
+            if re.search(pattern, url):
+                return True  # Skip the URL
+        
+        return False  # Don't skip the URL
+
     
     def checkLinksQuality(self, links, content):
         # let's find in which part of content the links are
@@ -142,4 +177,7 @@ class AgentAnt(scrapy.Spider):
     
     def pickDomain(self, domain):
         pass
-    
+
+
+if __name__ == "__main__":
+    agent = AgentAnt()

@@ -120,6 +120,18 @@ class ParseServerClient:
         # dump the json into a list into a dictionary
         value = value['results']
         return value
+    
+    def getPointerToObject(self, object, type):
+        if(not object["objectId"]):
+            # throw an exception, you cannot create a point to an unexisting object bodoh!
+            raise Exception("You cannot create a point to an unexisting object, bodoh!")
+        pointer = {
+            "__type": "Pointer",
+            "className": type,
+            "objectId": object["objectId"]
+        }
+        
+        return pointer 
 
 class LiveQueryClient:
     def __init__(self, app_id, clientKey, server_url):
@@ -157,16 +169,6 @@ class LiveQueryClient:
 
     def _handle_message(self, message):
         data = json.loads(message)
-        # if data.get('op') == 'connected':
-        #     print("Connected to LiveQuery")
-        # elif data.get('op') == 'error':
-        #     print(f"Error: {data}")
-        # elif data.get('op') == 'subscribed':
-        #     print(f"Subscribed to query: {data}")
-        # elif data.get('op') == 'unsubscribed':
-        #     print(f"Unsubscribed from query: {data}")
-        # elif data.get('op') == 'create' or data.get('op') == 'update' or data.get('op') == 'delete':
-        #     print(f"Object {data.get('op')}d: {data.get('object')}")
         for observer in self.observers:
             observer(data.get('op'), data.get('object'))
 
