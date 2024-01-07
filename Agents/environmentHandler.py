@@ -1,5 +1,5 @@
 import json
-from parseServerClient import ParseServerClient
+from parseServerClient import ParseServerClient, LiveQueryClient
 from parseQuery import ParseQuery
 
 # let's create a class that allows handling the environment.
@@ -29,24 +29,37 @@ class VirtualEnvironment:
         # we can simply use create node because anyway it will be translate into a save. Our primary key is the
         # URL, therefore any node with the same URL will be overwritten as if it was an update.
         self.client.create("Node", node)
+        
+    def initializeAgent(self, updateCallBack):
+        #let's create a new agent
+        agent = {
+            "name": "agent",
+            "state": "idle",
+            "current_url": None,
+            "current_depth": None,
+            "overallPathQuality": 0,
+        }
+        # let's save the agent
+        response = self.client.create("Agent", agent)
+        # let's merge the response with the agent
+        agent.update(response)
+        self.runAgentLiveQuery(agent, updateCallBack)
+        return agent
+    
+    def runAgentLiveQuery(self, agent, callBack):
+        # let's create the query
+        query = ParseQuery("Agent")
+        query.equalTo("objectId", agent["objectId"])
+        # let's subscribe to the query
+        liveQueryClient = LiveQueryClient(self.config["appId"], self.config["clientKey"], self.config["serverURL"])
+        liveQueryClient.subscribe("Agent", callBack, query)   
+        
 
 
 if __name__ == "__main__":
     # let's create a new environment
     env = VirtualEnvironment()
-    # let's create a new node
-    node = {
-        "url": "https://www.google.com",
-        "parent_url": None,
-        "depth": 0
-    }
-    # save the node
-    env.saveNode(node)
-    # let's create a new node
-    node = {
-        "url": "https://www.google.com",
-        "parent_url": "https://www.google.com",
-        "depth": 1
-    }
-    # save the node
-    env.saveNode(node)
+    # let's create a new agent
+    agent = env.initializeAgent()
+    print(agent)
+    

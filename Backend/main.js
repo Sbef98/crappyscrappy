@@ -9,12 +9,12 @@ const Node = Parse.Object.extend("Node", {
             this.set("url", value);
         }
     },
-    daughter_nodes: {
+    children_nodes: {
         get: function () {
-            return this.get("daughter_urls");
+            return this.get("children_nodes");
         },
         set: function (value) {
-            this.set("daughter_urls", value);
+            this.set("children_nodes", value);
         }
     },
     parent_url: {
@@ -77,7 +77,7 @@ const Node = Parse.Object.extend("Node", {
     // Instance methods
     initialize: function (attrs, options) {
         this.url = attrs.url;
-        this.daughter_urls = attrs.daughter_urls;
+        this.children_nodes = attrs.children_nodes;
     }
 }, {
     // Class methods
@@ -85,7 +85,6 @@ const Node = Parse.Object.extend("Node", {
         return new Node(attrs, options);
     }
 });
-
 
 // let's add a before save for the clas Node
 Parse.Cloud.beforeSave("Node", async function (request, response) {
@@ -107,32 +106,50 @@ Parse.Cloud.beforeSave("Node", async function (request, response) {
             response.error("Could not validate existence for this node object.");
         }
     });
-    links = request.object.get("daughter_urls");
     
-    if(!links)
-        return request.object;
+    // links = request.object.get("children_nodes");
+    
+    // if(!links)
+    //     return request.object;
 
-    const existingDaughterUrlsQuery = new Parse.Query("Node");
-    existingDaughterUrlsQuery.containedIn("url", links);
-    const existingDaughterUrls = await existingDaughterUrlsQuery.find();
-    const nonExistingDaugtherUrls = links.filter(link => !existingDaughterUrls.some(existingLink => existingLink.get("url") === link));
-    const newNodes = nonExistingDaugtherUrls.map(url => {
-        const node = new Parse.Object("Node");
-        node.set("url", url);
-        return node;
-    });
-    const savedNewNodes = await Parse.Object.saveAll(newNodes);
-    request.object.set("daughter_nodes", existingDaughterUrls.concat(savedNewNodes));
+    // const linksMap = {};
+    // links.forEach(link => {
+    //     linksMap[link.get("url")] = link;
+    // });
+
+    // const existingDaughterUrlsQuery = new Parse.Query("Node");
+    // linksUrls = linksMap.keys();
+    // existingDaughterUrlsQuery.containedIn("url", linksUrls);
+
+    // const existingDaughterUrls = await existingDaughterUrlsQuery.find({useMasterKey: true});
+
+    // // now i can add the correct id to each one of the links
+    // existingDaughterUrls.forEach(existingDaughterUrl => {
+    //     const existingDaughterUrlId = existingDaughterUrl.objectId;
+    //     linksMap[existingDaughterUrl.get("url")].objectId = existingDaughterUrlId;
+    // });
+
+    // const linksToUpdate = linksMap.values();
+    
+
+    // const newNodes = nonExistingDaugtherUrls.map(link => {
+    //     const node = new Parse.Object("Node");
+    //     node.set("url", link.get("url"));
+    //     node.set("parentQualityStatement", link.get("parentQualityStatement"));
+    //     return node;
+    // });
+    // const savedNewNodes = await Parse.Object.saveAll(newNodes);
+    // request.object.set("children_nodes", existingDaughterUrls.concat(savedNewNodes));
     return request.object;
 });
 
-// let's add a after FInd for the class Node, to map the daughter_urls to daughter_nodes
+// let's add a after FInd for the class Node, to map the children_nodes to children_nodes
 Parse.Cloud.afterFind("Node", async function (request) {
     const nodes = request.objects;
     // nodes.forEach(node => {
-    //     const daughterNodes = node.get("daughter_nodes");
+    //     const daughterNodes = node.get("children_nodes");
     //     if(daughterNodes)
-    //         node.set("daughter_urls", daughterNodes.map(daughterNode => daughterNode.get("url")));
+    //         node.set("children_nodes", daughterNodes.map(daughterNode => daughterNode.get("url")));
     // });
     return nodes;
 });

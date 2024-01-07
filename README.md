@@ -13,6 +13,7 @@ A possibility could be a fully functional backend, and as usual i am thinking ab
 [] When an agent wants to sniff the quality of a direction (e.g. querying one of the webistes to check if it should follow that path), the environment should already reply with a "summarized" object, therefore if multiple parents made a quality statement for a certain node, we should return the object with one single parent quality statement with the weighted mean sqaure root.
 [] check bi-directional links between kids and parents
 [] when a parent is updated, apart updating its children we must also remove the info from such node on the children nodes that are not children anymore
+[] foreach agent, create its own stats to know the overall quality of the computed path
 
 ## Agents duty
 Let's try to sum up what an agent should do more or less.
@@ -20,8 +21,8 @@ Let's try to sum up what an agent should do more or less.
  [x] Open an assigned website
  [x] Get all it's content and try to understand what it is about and what info are useful
  [x] Get all it's link
- [x] contextualized the links (is it good based on the current page description of the link?)
- [x] Check current page language
+ [] contextualized the links (is it good based on the current page description of the link?)
+ [] Check current page language
  [ ] Split the links in categories
      - Same domain
      - Same subdomain
@@ -31,6 +32,8 @@ Let's try to sum up what an agent should do more or less.
  [ ] When choosing a direction, it should first of all filter at least a bit to do not query all of them to the environment
  [ ] Choose the best link to follow multiplying various factors, in a random way -> ofc take into account the quality of the link, also by how its parents stated it.
  [] understand when going home (also through live query)
+
+[] keep track of his current overall path quality through livequery!
 
 #### Extra
 [] What if the same link is stated more than once? we need to contextualize it with some sort of mean!
