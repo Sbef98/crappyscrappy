@@ -5,6 +5,7 @@ class ParseQuery:
         self.limit_value = None
         self.skip_value = None
         self.aggregation_value = None
+        self.include_value = []
 
     def equalTo(self, key, value):
         self.filters[key] = value
@@ -28,8 +29,8 @@ class ParseQuery:
     def aggregate(self, value):
         self.aggregation_value = value
     
-    def include(self, value):
-        self.filters["include"] = value
+    def include(self, fields):
+        self.include_value = fields
     
 
     def find(self):
@@ -40,6 +41,10 @@ class ParseQuery:
             print(f"Limit: {self.limit_value}")
         if self.skip_value is not None:
             print(f"Skip: {self.skip_value}")
+        if self.aggregation_value is not None:
+            print(f"Aggregation: {self.aggregation_value}")
+        if len(self.include_value) > 0:
+            print(f"Include: {self.include}")
 
 if __name__ == "__main__":
     query = ParseQuery('MyClass')

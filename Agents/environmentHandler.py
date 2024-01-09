@@ -45,10 +45,10 @@ class VirtualEnvironment:
         #let's create a new agent
         agent = {
             "name": "agent",
-            "state": "idle",
+            "state": "working",
             "current_url": None,
             "current_depth": None,
-            "overallPathQuality": 0,
+            "overallPathQuality": 1,
         }
         # let's save the agent
         response = self.client.create("Agent", agent)
@@ -88,6 +88,10 @@ class VirtualEnvironment:
             return None
         # otherwise, return the first result
         return result[0]
+    
+    def updateAgent(self, agent):
+        # update the agent
+        self.client.update("Agent", agent)
 
 if __name__ == "__main__":
     # let's create a new environment

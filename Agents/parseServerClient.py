@@ -112,6 +112,8 @@ class ParseServerClient:
             params['skip'] = parse_query.skip_value
         if parse_query.aggregation_value is not None:
             params['aggregation'] = parse_query.aggregation_value
+        if len(parse_query.include_value) > 0:
+            params['include'] = ",".join(parse_query.include_value)
 
         # Make the GET request
         response = requests.get(url, headers=headers, params=params)

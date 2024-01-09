@@ -51,6 +51,14 @@ Let's try to sum up what an agent should do more or less.
         "traversals": [edge],                  # arrays becuase more than one agent may land on the same node
     }
 
+    agent = {
+        "name": "agent",
+        "state": "idle",
+        "current_url": None,
+        "current_depth": None,
+        "overallPathQuality": 1, #between 0 and 1. Starts at 1 because first website is always good
+    }
+
 #### Extra
 [] What if the same link is stated more than once? we need to contextualize it with some sort of mean!
 [] Multiple parents, how do we handle? E.g. multiple parents state different things on the same link, the parentQualityStatements should be computed also on the quality of the parent itself, therefore should be a mean square route evalutation based weighted by the parent's quality itself
@@ -90,7 +98,7 @@ To each link in the currently evaluated page should be related to a weight, whic
 
 So, i assign 1,2,3 as starting weights for each one of the links.
 
-[x] The currentnode age could be an extra penalizer for internal nodes, but this time it should be a value between 0.5 and 1.5, so that if very well updated websites should be taken into consideration more in depth
+[x] The currentnode age could be an extra penalizer for internal nodes, but this time it should be a value between 1 and 1.5, so that if very well updated websites should be taken into consideration more in depth
 
 [x] How well is my current website all these new explorable nodes? Let's have a sentiment analysis of the words before such link. The sentiment analysis should return a value between -1 and 1, which gives us a "very bad" to "very positive" ratio. 
 At this point, we get these evaluations multiplied by the externality weighs. An external domain should get then the following impact:
@@ -118,9 +126,9 @@ But we can get more info if some nodes where already discovered. For example, if
 - The overall evaluation of the content quality performed by the environment itself?
 
 ### Let's explain this better
-[] Compute for each edge a value based on the stats
-[] Multiply that edge value by as eight given by the age of the edge
-[] Sum the overall value of the edges
-[] The total amount of traversal will not given by the exact count but by the intensity of the pheromone on that node rapresented by the previous count
+[x] Compute for each edge a value based on the stats
+[x] Multiply that edge value by as eight given by the age of the edge
+[x] Sum the overall value of the edges
+[x] The total amount of traversal will not given by the exact count but by the intensity of the pheromone on that node rapresented by the previous count
 [] The node itself should rather have a value coz yes computed by the environment.
 **traversals should be deleted after a while coz meaningless**
