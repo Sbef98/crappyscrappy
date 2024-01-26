@@ -91,15 +91,14 @@ class AgentAnt(scrapy.Spider):
                 
             # let's find all the urls
             all_links = response.css('a::attr(href)').getall()
-            # filter out the relative paths
-            try:
-                links = [link for link in all_links if not self.should_skip_url(link)]
-            except ValueError:
-                # go back to parent
-                # get the parent from the environment
-                parent_node = response.meta['parent_node']
-                #go back to parent
-                yield self.goBackToParent(parent_node, depth)
+            # doing a basic clean out, to make sure we'll ignore the useless links
+            links = []
+            for link in all_links:
+                try:
+                    if not self.should_skip_url(link):
+                        links.append(link)
+                except ValueError:
+                    print(f"Skipping {link}")
             
             if(len(links) == 0 or not links):
                 # go back to parent
@@ -148,6 +147,7 @@ class AgentAnt(scrapy.Spider):
                 "url": url,
                 "children_nodes": len(linksWeights),
                 "traversals": [edge],                  # arrays becuase more than one agent may land on the same node
+                "content": content
             }
             
             # let's save the node
