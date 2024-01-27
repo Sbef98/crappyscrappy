@@ -1,14 +1,10 @@
-from arrow import get
 import scrapy
 from urllib.parse import urlparse
 from environmentHandler import VirtualEnvironment
-from textblob import TextBlob
-import re, requests
-from datetime import datetime
-from w3lib.http import headers_raw_to_dict
-import numpy as np
+import re
 
 import tldextract, random
+from scrapy.exceptions import CloseSpider
 
 def get_domain(url):
     extracted = tldextract.extract(url)
@@ -16,7 +12,7 @@ def get_domain(url):
 
 class AgentAnt(scrapy.Spider):
     name = 'grogubila'
-    start_urls = ['https://www.unimore.it/', "https://www.comune.modena.it/", "https://www.ferrari.com/"]
+    start_urls = ['https://www.unimore.it/'] #, "https://www.comune.modena.it/", "https://www.ferrari.com/"]
     custom_settings = {
     'DEPTH_LIMIT': 999999  # A very large number to practically make it unlimited
     }
@@ -27,9 +23,11 @@ class AgentAnt(scrapy.Spider):
         # initialize the environment
         self.env = VirtualEnvironment()
         self.agentInfo, self.liveQueryClient = self.env.initializeAgent(self.liveQueryUpdateCallback)
+        self.subscription_id = ""
     
     def liveQueryUpdateCallback(self, operation, data):
         if operation == 'connected':
+            self.subscription_id = data['clientId']
             print("Connected to LiveQuery")
         elif operation == 'error':
             print(f"Error: {data}")
@@ -39,6 +37,8 @@ class AgentAnt(scrapy.Spider):
             self.agentInfo = data
         elif operation == 'update':
             self.agentInfo = data
+            if(self.agentInfo["pathQuality"] == 0):
+                self.die("Path quality is 0")
         # elif operation == 'delete':
         #     # this agent shall die
         #     self.agentInfo = None
@@ -47,14 +47,16 @@ class AgentAnt(scrapy.Spider):
     def closed(self, reason):
         self.agentInfo["state"] = "dead"
         self.env.updateAgent(self.agentInfo)
+        self.liveQueryClient.unsubscribe(self.subscription_id)
+        raise CloseSpider(reason)
 
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(url, callback=self.parse, meta={'depth': 1, 'parent_node': None}, dont_filter=True)
             
-    def die(self):
-        self.closed("No more ways to go")
-        exit(0)
+    def die(self, reason):
+        self.closed(reason)
+        
             
     def parse(self, response):
         # let's get the depth
@@ -64,58 +66,54 @@ class AgentAnt(scrapy.Spider):
         else:
             parent_node = None
         
+        # let's read the whole content of the page
         try:
-            # let's read the whole content of the page
+            content = response.css('body').get()
+        except:
+            self.die("No content found in page")
+            
+        # let's find all the urls
+        all_links = response.css('a::attr(href)').getall()
+        # doing a basic clean out, to make sure we'll ignore the useless links
+        links = []
+        for link in all_links:
             try:
-                content = response.css('body').get()
-            except:
-                self.die()
-                
-            # let's find all the urls
-            all_links = response.css('a::attr(href)').getall()
-            # doing a basic clean out, to make sure we'll ignore the useless links
-            links = []
-            for link in all_links:
-                try:
-                    if not self.should_skip_url(link):
-                        links.append(link)
-                except ValueError:
-                    print(f"Skipping {link}")
+                if not self.should_skip_url(link):
+                    links.append(link)
+            except ValueError:
+                print(f"Skipping {link}")
+        
+        if(len(links) == 0 or not links):
+            self.die("No more ways to go")
             
-            if(len(links) == 0 or not links):
-                self.die()
-                
-            # let's get the current url
-            url = response.url
-            
-            node = {
-                "url": url,
-                "content": content,
-                "parent_node": parent_node,
-                "agent": self.agentInfo["id"],
-            }
-            
-            # let's save the node
-            self.env.saveNode(node)
-            
-            agent = self.agentInfo
-            # let's update the agent
-            agent["max_depth"] = depth
-            self.env.updateAgent(agent)
-            
-            nextLink = self.pickNextLink(links)
-            # let's create the request
-            request = scrapy.Request(nextLink['url'], callback=self.parse, meta={'depth': depth + 1, 'parent_node': url }, dont_filter=True, errback=self.handle_error)
+        # let's get the current url
+        url = response.url
+        
+        node = {
+            "url": url,
+            "content": content,
+            "parent_node": parent_node,
+            "agent": self.agentInfo["objectId"],
+        }
+        
+        # let's save the node
+        self.env.saveNode(node)
+        
+        agent = self.agentInfo
+        # let's update the agent
+        agent["max_depth"] = depth
+        self.env.updateAgent(agent)
+        
+        nextLink = self.pickNextLink(links)
+        # let's create the request
+        request = scrapy.Request(nextLink, callback=self.parse, meta={'depth': depth + 1, 'parent_node': url }, dont_filter=True, errback=self.handle_error)
 
-            # let's yield the request
-            yield request
-            
-        except Exception as e:
-            self.die()
+        # let's yield the request
+        yield request
 
     def handle_error(self, failure):
         # go back to parent
-        self.die()
+        self.die(failure.value.response.url + " is not reachable")
 
     def pickNextLink(self, links):
         return random.choice(links)

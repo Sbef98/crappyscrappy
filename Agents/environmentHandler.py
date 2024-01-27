@@ -32,11 +32,7 @@ class VirtualEnvironment:
         edge.update(saveInfo)
         return edge
 
-    def saveNode(self, node):
-        traversal = node["traversals"][0]
-        traversal = self.saveEdge(traversal)
-        node["traversals"] = [self.client.getPointerToObject(traversal, "Edge")      ]
-                
+    def saveNode(self, node):                
         # we can simply use create node because anyway it will be translate into a save. Our primary key is the
         # URL, therefore any node with the same URL will be overwritten as if it was an update.
         self.client.create("Node", node)
@@ -46,9 +42,6 @@ class VirtualEnvironment:
         agent = {
             "name": "agent",
             "state": "working",
-            "current_url": None,
-            "current_depth": None,
-            "overallPathQuality": 1,
         }
         # let's save the agent
         response = self.client.create("Agent", agent)
@@ -91,7 +84,7 @@ class VirtualEnvironment:
     
     def updateAgent(self, agent):
         # update the agent
-        self.client.update("Agent", agent)
+        self.client.update("Agent", agent["objectId"], agent)
 
 if __name__ == "__main__":
     # let's create a new environment
