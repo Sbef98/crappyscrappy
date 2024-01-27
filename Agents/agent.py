@@ -98,6 +98,11 @@ class AgentAnt(scrapy.Spider):
             # let's save the node
             self.env.saveNode(node)
             
+            agent = self.agentInfo
+            # let's update the agent
+            agent["max_depth"] = depth
+            self.env.updateAgent(agent)
+            
             nextLink = self.pickNextLink(links)
             # let's create the request
             request = scrapy.Request(nextLink['url'], callback=self.parse, meta={'depth': depth + 1, 'parent_node': url }, dont_filter=True, errback=self.handle_error)
