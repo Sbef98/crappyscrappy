@@ -56,6 +56,8 @@ class ParseServerClient:
             'Content-Type': 'application/json',
             'X-Parse-REST-API-Key': self.rest_api_key
         }
+        if("className" in object):
+            del object["className"]
         # let's make the call
         response = requests.put(url, headers=headers, json=object)
         # let's return the response

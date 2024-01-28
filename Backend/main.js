@@ -76,6 +76,8 @@ Parse.Cloud.beforeSave("Agent", async function (request) {
     const nodesQuery = agent.relation("nodesInPath").query();
     const nodes = await nodesQuery.find() ?? [];
 
+    const numberOfNodes = nodes.length;
+
     // the overall agent quality is the median of the nodes contentQuality
     const nodesContentQuality = [];
     for (const node of nodes) {
@@ -101,4 +103,5 @@ Parse.Cloud.beforeSave("Agent", async function (request) {
     }
 
     agent.set("pathQuality", median);
+    agent.set("numberOfNodesInPath", numberOfNodes);
 });

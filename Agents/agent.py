@@ -19,21 +19,31 @@ def get_domain(url):
 
 class AgentAnt(scrapy.Spider):
     name = 'grogubila'
-    start_urls = ["https://www.unimore.it/"] #, , "https://www.ferrari.com/"] 'https://www.comune.modena.it/'
+    # start_urls = ["https://www.unimore.it/"] #, , "https://www.ferrari.com/"] 'https://www.comune.modena.it/'
     custom_settings = {
     'DEPTH_LIMIT': 999999  # A very large number to practically make it unlimited
     }
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # call the parent constructor
         super().__init__()
         # initialize the environment
         self.env = VirtualEnvironment()
-        self.initFunction()
-
-    def initFunction(self):
         self.agentInfo, self.liveQueryClient = self.env.initializeAgent(self.liveQueryUpdateCallback)
         self.subscription_id = ""
+        self.start_urls = kwargs.get('start_urls').split(',') if 'start_urls' in kwargs else []
+        # let's clean the start urls, keeping only non empty sequences
+        self.start_urls = [url for url in self.start_urls if url and url!='']
+        print(self.start_urls)
+        
+
+    def killIfShamefulPath(self):
+        if(self.agentInfo["pathQuality"] == 0):
+                self.die("Path quality is 0")
+
+    def killIfCircularPath(self):
+        if("numberOfNodesInPath" in self.agentInfo and self.agentInfo["numberOfNodesInPath"] < 2*self.agentInfo["max_depth"]):
+            self.die("Circular path")
     
     def liveQueryUpdateCallback(self, operation, data):
         if operation == 'connected':
@@ -47,8 +57,7 @@ class AgentAnt(scrapy.Spider):
             self.agentInfo = data
         elif operation == 'update':
             self.agentInfo = data 
-            if(self.agentInfo["pathQuality"] == 0):
-                self.die("Path quality is 0")
+            self.killIfShamefulPath()
         # elif operation == 'delete':
         #     # this agent shall die
         #     self.agentInfo = None
@@ -129,7 +138,7 @@ class AgentAnt(scrapy.Spider):
 
     def handle_error(self, failure):
         # go back to parent
-        self.die(failure.value.response.url + " is not reachable")
+        self.die("some website is not reachable")
         
     def getDfOfLinks(self, links, nodes):
         # let's first of all fetch the links
@@ -150,6 +159,10 @@ class AgentAnt(scrapy.Spider):
         return df
     
     def computeAgentOverallPathQuality(self, agent):
+        # let's check if the agent is the one we are running now
+        if(agent["objectId"] == self.agentInfo["objectId"]):
+            # let's return 0, so that we lower as much as possible the probability of picking the same path again
+            return 0
         if "pathQuality" not in agent or not agent["pathQuality"]:
             return 0
         if "max_depth" not in agent or not agent["max_depth"]:
