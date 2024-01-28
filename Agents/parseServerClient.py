@@ -203,8 +203,8 @@ class LiveQueryClient:
             "requestId": 1,  # Change this requestId for multiple subscriptions
             "subscriptionId": subscription_id
         }
-        self.websocket.send(json.dumps(unsubscribe_data))
         self.observers = []
+        return self.websocket.send(json.dumps(unsubscribe_data))
 
     def addCallback(self, callback):
         self.observers.append(callback)

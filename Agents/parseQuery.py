@@ -32,6 +32,9 @@ class ParseQuery:
     def include(self, fields):
         self.include_value = fields
     
+    def containedIn(self, key, values):
+        self.filters[key] = {"$in": values}
+    
 
     def find(self):
         # Here you would typically make a request to the Parse server with the filters
